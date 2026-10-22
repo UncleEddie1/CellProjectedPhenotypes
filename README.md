@@ -75,10 +75,21 @@ milo_obj <- countCells(milo_obj, meta.data = data.frame(colData(milo_obj)), samp
 
 6. calculate neighborhood phenotype associations, the PCA coordinates of neighborhood centers, a matrix of distances between cells and neighborhoods, and a data frame of cell phenotype scores.
 ```
-neighborhoodPhenotypeAssociations <- runNeighborhoodAssociationTest(milo_obj, varsToTest, varsToCorrect, col_name)
 NeighborhoodCenters <- calculateNeighborhoodCenterMatrix(milo_obj, cellPCs)
 cellNeighborhoodDistanceMatrix <- calculateCellNeighborhoodDistanceMatrix(NeighborhoodCenters, cellPCs, milo_obj)
+
+# in-sample
+neighborhoodPhenotypeAssociations <- runNeighborhoodAssociationTest(milo_obj, varsToTest, varsToCorrect, col_name)
 cellScores <- calculateCellScores(milo_obj, neighborhoodPhenotypeAssociations, cellNeighborhoodDistanceMatrix, col_name, varsToTest)
+
+# leave-one-out (LOO)
+donors <- unique(milo_obj[[col_name]])
+cellScores <- do.call(rbind, lapply(donors, function(d) {
+  assoc_d  <- runNeighborhoodAssociationTest(milo_obj, varsToTest, varsToCorrect, col_name, exclude = d)
+  scores_d <- calculateCellScores(milo_obj, assoc_d, cellNeighborhoodDistanceMatrix, col_name, varsToTest)
+  scores_d[scores_d[[col_name]] == d, ]
+}))
+cellScores <- cellScores[colnames(milo_obj), ] #same cell order as the original cellScores
 ```
 
 ## Contributions

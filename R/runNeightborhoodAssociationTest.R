@@ -7,12 +7,13 @@
 #' @importFrom miloR testNhoods
 #' @return A list of data frames, one per test variable. Each data frame will be a table, one row per neighborhood, of enrichment results.
 #' @export
-runNeighborhoodAssociationTest <- function(milo_obj, varsToTest, varsToCorrect, col_name) {
+runNeighborhoodAssociationTest <- function(milo_obj, varsToTest, varsToCorrect, col_name, exclude = NULL) {
   # set up design matrix 
   designMatrix <- setNames(data.frame(colnames(nhoodCounts(milo_obj))), col_name)
   designMatrix <- cbind(designMatrix,meta[match(designMatrix[[col_name]],meta[[col_name]]),c(varsToTest,varsToCorrect)])
   rownames(designMatrix) <- designMatrix[[col_name]]
   designMatrix <- na.omit(designMatrix) #omit rows with NAs in metadata
+  designMatrix <- droplevels(designMatrix[!rownames(designMatrix) %in% as.character(exclude), , drop = FALSE]) # exclude held-out donors
   dfToRun <- data.frame(testVar = varsToTest,
                         covariates = paste0("~", paste(varsToCorrect, collapse = " + "), " + %s"))
   phenoResults <- lapply(1:nrow(dfToRun),function(i){
