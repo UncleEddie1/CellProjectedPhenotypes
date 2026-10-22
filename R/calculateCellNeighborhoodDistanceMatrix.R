@@ -17,7 +17,7 @@ calculateCellNeighborhoodDistanceMatrix <- function(NeighborhoodCenters, cellPCs
   colnames(dist_matrix) <- rownames(NeighborhoodCenters)
   rownames(dist_matrix) <- rownames(milo_obj@nhoods)
   # multiplying the neighborhood connectivity matrix by the distance matrix results in a sparse matrix.
-  dist_matrix_Sparse <- t(dist_matrix * milo_obj@nhoods)
+  dist_matrix_Sparse <- Matrix::t(as(dist_matrix * milo_obj@nhoods, "sparseMatrix"))
 }
 
 #' Calculate Euclidean distances between rows of two matrices.

@@ -13,8 +13,9 @@
 #' @return A data frame where each column corresponds to a phenotype, and each row corresponds to a cell, containing the calculated phenotype scores for each cell.
 #' @export
 calculateCellScores <- function(milo_obj, neighborhoodPhenotypeAssociations, cellNeighborhoodDistanceMatrix, col_name, varsToTest) {
+  cellNeighborhoodDistanceMatrix <- as(cellNeighborhoodDistanceMatrix, "dgCMatrix")
   cellscores <- lapply(neighborhoodPhenotypeAssociations,function(neighborhoodPhenotypeAssociations){    
-    tmp <- t(milo_obj@nhoods) * neighborhoodPhenotypeAssociations$logFC    
+    tmp <- as(Matrix::t(milo_obj@nhoods) * neighborhoodPhenotypeAssociations$logFC, "dgCMatrix")
     scores <- col_scoring_ignore0(tmp,cellNeighborhoodDistanceMatrix)
     colInd <- as.character(1:ncol(tmp))
     scores <- scores[colInd]
