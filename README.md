@@ -18,12 +18,6 @@ CPP makes extensive use of _Milo_, a method to calculate differential abundance 
 
 CPP uses the Local Inverse Simpson's Index (LISI) to remove poorly mixed cells. Details of this method can be gained from [this manuscript](https://www.nature.com/articles/s41592-019-0619-0) and from the corresponding [github page](https://github.com/immunogenomics/LISI).
 
-### Installing CPP
-The latest development version of this package can be installed from Github using `devtools`:
-```
-remotes::install_github("KellisLab/CellProjectedPhenotypes")
-```
-
 ## Usage
 Here we demonstrate basic CPP usage by calculating cell projected phenotype scores
 from a Seurat-derived RDS file with corresponding metadata. Both of these files are available in our _data_ directory. 
