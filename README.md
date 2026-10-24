@@ -84,6 +84,16 @@ cellScores <- do.call(rbind, lapply(donors, function(d) {
   scores_d[scores_d[[col_name]] == d, ]
 }))
 cellScores <- cellScores[colnames(milo_obj), ] #same cell order as the original cellScores
+
+# fast LOO
+donors <- unique(milo_obj[[col_name]])
+fastLOO <- runFastLeaveOneOutAssociations(milo_obj, varsToTest, varsToCorrect, col_name)
+cellScores <- do.call(rbind, lapply(donors, function(d) {
+  assoc_d  <- lapply(fastLOO, function(B) data.frame(logFC = B[, as.character(d)]))
+  scores_d <- calculateCellScores(milo_obj, assoc_d, cellNeighborhoodDistanceMatrix, col_name, varsToTest)
+  scores_d[scores_d[[col_name]] == d, ]
+}))
+cellScores <- cellScores[colnames(milo_obj), ]
 ```
 
 ## Contributions

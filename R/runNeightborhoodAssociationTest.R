@@ -25,3 +25,31 @@ runNeighborhoodAssociationTest <- function(milo_obj, varsToTest, varsToCorrect, 
   names(phenoResults) <- varsToTest
   return(phenoResults)
 }
+
+runFastLeaveOneOutAssociations <- function(milo_obj, varsToTest, varsToCorrect, col_name) {
+  designMatrix <- setNames(data.frame(colnames(nhoodCounts(milo_obj))), col_name)
+  designMatrix <- cbind(designMatrix,meta[match(designMatrix[[col_name]],meta[[col_name]]),c(varsToTest,varsToCorrect)])
+  rownames(designMatrix) <- designMatrix[[col_name]]
+  designMatrix <- na.omit(designMatrix) #omit rows with NAs in metadata
+  counts <- as.matrix(nhoodCounts(milo_obj)[, rownames(designMatrix)])
+  
+  # covariates-only model
+  X0 <- model.matrix(reformulate(varsToCorrect), designMatrix)
+  dge <- edgeR::calcNormFactors(edgeR::DGEList(counts, lib.size = colSums(counts)), method = "TMM")
+  dge <- edgeR::estimateDisp(dge, X0)
+  aug <- edgeR::addPriorCount(counts, offset = edgeR::getOffset(dge), prior.count = 0.125)   # edgeR's logFC shrinkage
+  mu0 <- edgeR::glmFit(aug$y, X0, offset = aug$offset, dispersion = dge$trended.dispersion, prior.count = 0)$fitted.values
+  w <- mu0 / (1 + dge$trended.dispersion * mu0)
+  S <- aug$y / mu0 - 1
+  S[!is.finite(S)] <- 0 # neighborhoods with no expected cells
+  
+  # per-trait, donor held-out
+  lapply(setNames(varsToTest, varsToTest), function(trait) {
+    yt  <- lm.fit(X0, as.numeric(designMatrix[[trait]]))$residuals   # trait with covariates removed
+    num <- as.vector((w * S) %*% yt)
+    den <- as.vector(w %*% yt^2)
+    loo <- (num - sweep(w * S, 2, yt, "*")) / (den - sweep(w, 2, yt^2, "*")) / log(2)
+    missing <- setdiff(colnames(nhoodCounts(milo_obj)), colnames(loo)) # for donors missing metadata
+    cbind(loo, matrix(num / den / log(2), nrow(loo), length(missing), dimnames = list(NULL, missing)))
+  })
+}
